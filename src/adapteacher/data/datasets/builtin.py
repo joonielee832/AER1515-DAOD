@@ -3,12 +3,12 @@ import os
 import contextlib
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from fvcore.common.timer import Timer
-# from fvcore.common.file_io import PathManager
 from iopath.common.file_io import PathManager
 
-from detectron2.data.datasets.pascal_voc import register_pascal_voc
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
-from .cityscapes_foggy import load_cityscapes_instances
+from detectron2.data.datasets.cityscapes import load_cityscapes_instances, load_cityscapes_semantic
+from .cityscapes_foggy import load_cityscapes_foggy_instances
+from .multiweather import load_multiweather_instances
 import io
 import logging
 
@@ -110,8 +110,15 @@ _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_coco_unlabel(_root)
 
 
-# ==== Predefined splits for raw cityscapes foggy images ===========
+# ==== Predefined splits for raw cityscapes images ===========
 _RAW_CITYSCAPES_SPLITS = {
+    "cityscapes_fine_instance_seg_train_coco": ("cityscapes/leftImg8bit/train/", "cityscapes/gtFine/train/"),
+    "cityscapes_fine_instance_seg_val_coco": ("cityscapes/leftImg8bit/val/", "cityscapes/gtFine/val/"),
+    "cityscapes_fine_instance_seg_test_coco": ("cityscapes/leftImg8bit/test/", "cityscapes/gtFine/test/"),
+}
+
+# ==== Predefined splits for raw cityscapes foggy images ===========
+_RAW_CITYSCAPES_FOGGY_SPLITS = {
     "cityscapes_foggy_train": ("cityscapes_foggy/leftImg8bit/train/", "cityscapes_foggy/gtFine/train/"),
     "cityscapes_foggy_val": ("cityscapes_foggy/leftImg8bit/val/", "cityscapes_foggy/gtFine/val/"),
     "cityscapes_foggy_test": ("cityscapes_foggy/leftImg8bit/test/", "cityscapes_foggy/gtFine/test/"),
@@ -122,15 +129,32 @@ _RAW_MULTIWEATHER_SPLITS = {
     "multiweather_train": ("cityscapes_multiweather/leftImg8bit/train/", "cityscapes_multiweather/gtFine/train/"),
 }
 
-def register_all_cityscapes_foggy(root):
+def register_all_cityscapes(root):
     for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_SPLITS.items():
+        meta = _get_builtin_metadata("cityscapes")
+        image_dir = os.path.join(root, image_dir)
+        gt_dir = os.path.join(root, gt_dir)
+
+        inst_key = key
+        DatasetCatalog.register(
+            inst_key,
+            lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
+                x, y, from_json=False, to_polygons=False
+            ),
+        )
+        MetadataCatalog.get(inst_key).set(
+            image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
+        )
+
+def register_all_cityscapes_foggy(root):
+    for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_FOGGY_SPLITS.items():
         meta = _get_builtin_metadata("cityscapes")
         image_dir = os.path.join(root, image_dir)
         gt_dir = os.path.join(root, gt_dir)
         inst_key = key
         DatasetCatalog.register(
             inst_key,
-            lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
+            lambda x=image_dir, y=gt_dir: load_cityscapes_foggy_instances(
                 x, y, from_json=False, to_polygons=False
             ),
         )
@@ -139,21 +163,21 @@ def register_all_cityscapes_foggy(root):
         )
         
 def register_all_multiweather(root):
-    for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_SPLITS.items():
+    for key, (image_dir, gt_dir) in _RAW_MULTIWEATHER_SPLITS.items():
         meta = _get_builtin_metadata("cityscapes")
         image_dir = os.path.join(root, image_dir)
         gt_dir = os.path.join(root, gt_dir)
         inst_key = key
         DatasetCatalog.register(
             inst_key,
-            lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
-                x, y, from_json=False, to_polygons=False
+            lambda x=image_dir, y=gt_dir: load_multiweather_instances(
+                x, y, to_polygons=False
             ),
         )
         MetadataCatalog.get(inst_key).set(
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
         )
 
+register_all_cityscapes(_root)
 register_all_cityscapes_foggy(_root)
 register_all_multiweather(_root)
-
