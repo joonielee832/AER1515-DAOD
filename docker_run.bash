@@ -4,7 +4,6 @@ DRIVE=$1
 
 VOLUMES="--volume=${PWD}/misc:/home/misc
         --volume=${PWD}/src:/home/src
-        --volume=${PWD}/submodules:/home/submodules
         --volume=${PWD}/results:/home/results
         --volume=${DRIVE}:/home/data"
 
