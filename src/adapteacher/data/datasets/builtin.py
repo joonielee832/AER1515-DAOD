@@ -9,6 +9,8 @@ from iopath.common.file_io import PathManager
 from detectron2.data.datasets.pascal_voc import register_pascal_voc
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
 from .cityscapes_foggy import load_cityscapes_instances
+from .acdc import load_acdc_instances
+from .cadc import load_cadc_instances
 import io
 import logging
 
@@ -46,7 +48,7 @@ def register_coco_unlabel_instances(name, metadata, json_file, image_root):
 
     This is an example of how to register a new dataset.
     You can do something similar to this function, to register new datasets.
-
+_get_builtin_metadata
     Args:
         name (str): the name that identifies a dataset, e.g. "coco_2014_train".
         metadata (dict): extra metadata associated with this dataset.  You can
@@ -109,17 +111,60 @@ def load_coco_unlabel_json(
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_coco_unlabel(_root)
 
+def register_all_acdc(root):
+    SPLITS = [
+        ("acdc_fog_train", "fog/train"),
+        ("acdc_fog_val", "fog/val"),
+        ("acdc_night_train", "night/train"),
+        ("acdc_night_val", "night/val"),
+        ("acdc_rain_train", "rain/train"),
+        ("acdc_rain_val", "rain/val"),
+        ("acdc_snow_train", "snow/train"),
+        ("acdc_snow_val", "snow/val"),
+    ]
+
+    meta = _get_builtin_metadata("cityscapes")
+    for name, split_dir in SPLITS:
+        root_dir = os.path.join(root, "acdc")
+        DatasetCatalog.register(
+            name,
+            lambda x=root_dir, y=split_dir: load_acdc_instances(
+                x, y, from_json=True, to_polygons=False
+            )
+        )
+        MetadataCatalog.get(name).set(
+                evaluator_type="coco", **meta
+            )
+    
+def register_all_cadc(root):
+    SPLITS = [
+        ("cadc_rain_train", "2018_03_07"),
+        ("cadc_rain_val", "2018_03_07"),
+        ("cadc_clear_train", "2018_03_06"),
+        ("cadc_clear_val", "2018_03_06"),
+        ("cadc_snow_train", "2018_02_27"),
+        ("cadc_snow_val", "2018_02_27"),
+    ]
+
+    meta = _get_builtin_metadata("cityscapes")
+
+    for name, split_dir in SPLITS:
+        root_dir = os.path.join(root, "cadcd")
+        DatasetCatalog.register(
+            name,
+            lambda x=root_dir, y=split_dir, z=name: load_cadc_instances(x, y, z)
+        )
+
+        MetadataCatalog.get(name).set(
+                evaluator_type="coco", **meta
+            )
 
 # ==== Predefined splits for raw cityscapes foggy images ===========
 _RAW_CITYSCAPES_SPLITS = {
-    # "cityscapes_foggy_{task}_train": ("cityscape_foggy/leftImg8bit/train/", "cityscape_foggy/gtFine/train/"),
-    # "cityscapes_foggy_{task}_val": ("cityscape_foggy/leftImg8bit/val/", "cityscape_foggy/gtFine/val/"),
-    # "cityscapes_foggy_{task}_test": ("cityscape_foggy/leftImg8bit/test/", "cityscape_foggy/gtFine/test/"),
     "cityscapes_foggy_train": ("cityscapes_foggy/leftImg8bit/train/", "cityscapes_foggy/gtFine/train/"),
     "cityscapes_foggy_val": ("cityscapes_foggy/leftImg8bit/val/", "cityscapes_foggy/gtFine/val/"),
     "cityscapes_foggy_test": ("cityscapes_foggy/leftImg8bit/test/", "cityscapes_foggy/gtFine/test/"),
 }
-
 
 def register_all_cityscapes_foggy(root):
     # root = "manifold://mobile_vision_dataset/tree/yujheli/dataset"
@@ -181,6 +226,8 @@ def register_all_water(root):
         # MetadataCatalog.get(name).thing_classes = ["person", "dog","bicycle", "bird", "car", "cat"]
         # MetadataCatalog.get(name).evaluator_type = "coco"
 
+register_all_cadc(_root)
+register_all_acdc(_root)
 register_all_cityscapes_foggy(_root)
 register_all_clipart(_root)
 register_all_water(_root)

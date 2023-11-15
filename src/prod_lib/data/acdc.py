@@ -23,7 +23,6 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-load_only_002 = False
 
 def _get_cityscapes_files(image_dir, gt_dir):
     files = []
@@ -34,8 +33,6 @@ def _get_cityscapes_files(image_dir, gt_dir):
         city_img_dir = os.path.join(image_dir, city)
         city_gt_dir = os.path.join(gt_dir, city)
         for basename in PathManager.ls(city_img_dir):
-            if load_only_002 and '0.02.png' not in basename:
-                continue
             image_file = os.path.join(city_img_dir, basename)
 
             # suffix = "leftImg8bit.png"
@@ -86,15 +83,12 @@ def load_cityscapes_instances(image_dir, gt_dir, from_json=True, to_polygons=Tru
         files,
     )
     logger.info("Loaded {} images from {}".format(len(ret), image_dir))
-    pool.close()
 
     # Map cityscape ids to contiguous ids
     from cityscapesscripts.helpers.labels import labels
 
     labels = [l for l in labels if l.hasInstances and not l.ignoreInEval]
     dataset_id_to_contiguous_id = {l.id: idx for idx, l in enumerate(labels)}
-    print("CITYSCAPES CONTINOUS ID MAP")
-    print(dataset_id_to_contiguous_id)
     for dict_per_image in ret:
         for anno in dict_per_image["annotations"]:
             anno["category_id"] = dataset_id_to_contiguous_id[anno["category_id"]]
@@ -238,7 +232,6 @@ def _cityscapes_files_to_dict(files, from_json, to_polygons):
         # https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/evaluation/instances2dict.py  # noqa
         with PathManager.open(instance_id_file, "rb") as f:
             inst_image = np.asarray(Image.open(f), order="F")
-   
         # ids < 24 are stuff labels (filtering them first is about 5% faster)
         flattened_ids = np.unique(inst_image[inst_image >= 24])
 
