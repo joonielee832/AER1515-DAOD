@@ -146,8 +146,8 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
 
                     print(label)
 
-                    ignore_in_eval = label.hasInstances
-                    has_instances = label.ignoreInEval
+                    has_instances = label.hasInstances
+                    ignore_in_eval = label.ignoreInEval
 
                     print(ignore_in_eval)
                     print(has_instances)
@@ -157,33 +157,33 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
                     bbox = obj["bbox"]
                     xmin = bbox[0]
                     ymin = bbox[1]
-                    width = bbox[2]
-                    height = bbox[3]
+                    # width = bbox[2]
+                    # height = bbox[3]
 
-                    img = cv2.imread(image_file)
-                    cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
-                        # font 
-                    font = cv2.FONT_HERSHEY_SIMPLEX 
+                    # img = cv2.imread(image_file)
+                    # cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
+                    #     # font 
+                    # font = cv2.FONT_HERSHEY_SIMPLEX 
                       
-                    # org 
-                    org = (xmin,ymin) 
+                    # # org 
+                    # org = (xmin,ymin) 
                       
-                    # fontScale 
-                    fontScale = 1
+                    # # fontScale 
+                    # fontScale = 1
                       
-                    # Blue color in BGR 
-                    color = (255, 0, 0) 
+                    # # Blue color in BGR 
+                    # color = (255, 0, 0) 
                       
-                    # Line thickness of 2 px 
-                    thickness = 2
+                    # # Line thickness of 2 px 
+                    # thickness = 2
 
-                    string = str([anno["category_id"]])
-                    img = cv2.putText(img, string, org, font,  
-                              fontScale, color, thickness, cv2.LINE_AA) 
+                    # string = str([anno["category_id"]])
+                    # img = cv2.putText(img, string, org, font,  
+                    #           fontScale, color, thickness, cv2.LINE_AA) 
                     
-                    cv2.imshow('image',img)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
+                    # cv2.imshow('image',img)
+                    # cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
                     
                     anno["bbox"] = obj["bbox"]
                     anno["bbox_mode"] = BoxMode.XYWH_ABS
