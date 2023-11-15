@@ -144,13 +144,9 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
 
                     label = labels[int(obj["category_id"])]
 
-                    print(label)
-
                     has_instances = label.hasInstances
                     ignore_in_eval = label.ignoreInEval
 
-                    print(ignore_in_eval)
-                    print(has_instances)
                     if not has_instances or ignore_in_eval:
                         continue
 
