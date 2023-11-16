@@ -13,14 +13,17 @@ import matplotlib.pyplot as plt
 
 from tsne_utils import TSNEDataset
 
-def load_all_cityscapes(root_dir):
+def load_all_cityscapes(root_dir, adverse=False):
     train_dir = osp.join(root_dir, 'leftImg8bit', 'train')
     cities = os.listdir(train_dir)
     filenames = []
     for city in cities:
         city_dir = osp.join(train_dir, city)
         files = os.listdir(city_dir)
-        filenames.extend([osp.join(city_dir, file) for file in files])
+        filenames.extend([osp.join(city_dir, file) \
+                            for file in files \
+                            if not file.endswith('overcast.png') \
+                            or (file.endswith('overcast.png') and not adverse)])
     return filenames
 
 def load_all_acdc(root_dir, filter_weather=False):
@@ -82,17 +85,26 @@ def main(root_dir, output_dir, remove=False):
     
     #? Load all datasets
     batch_size = 128
-    multiweather_filelist = load_all_cityscapes(osp.join(root_dir, 'cityscapes_multiweather'))
+    multiweather_filelist = load_all_cityscapes(osp.join(root_dir, 'cityscapes_multiweather'),
+                                                adverse=True)
     # cadc_filelist = load_all_cadc(osp.join(root_dir, 'cadcd'))
     cityscapes_filelist = load_all_cityscapes(osp.join(root_dir, 'cityscapes'))
+    foggy_cityscapes_filelist = load_all_cityscapes(osp.join(root_dir, 'cityscapes_foggy'))
+    #TODO: add multiweather foggy cityscapes
+    breakpoint()
     acdc_filelist = load_all_acdc(osp.join(root_dir, 'acdc'))
     min_dataset_size = min([len(multiweather_filelist), len(cityscapes_filelist), len(acdc_filelist)])
+    for filelist in [multiweather_filelist, 
+                     cityscapes_filelist, 
+                     acdc_filelist]:
+        random.shuffle(filelist)
     multiweather_filelist = multiweather_filelist[:min_dataset_size]
     # cadc_filelist = cadc_filelist[:min_dataset_size]
     cityscapes_filelist = cityscapes_filelist[:min_dataset_size]
     acdc_filelist = acdc_filelist[:min_dataset_size]
     
     multiweather_img_size = min(TSNEDataset.load_img(multiweather_filelist[0]).size)
+    breakpoint()
     multiweather_dataset = TSNEDataset(multiweather_filelist, multiweather_img_size, center_crop=True)
     multiweather_dataloader = DataLoader(multiweather_dataset, batch_size=batch_size, shuffle=True)
     # cadc_dataset = TSNEDataset(cadc_filelist, multiweather_img_size, center_crop=True)
