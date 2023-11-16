@@ -6,8 +6,10 @@ from fvcore.common.timer import Timer
 from iopath.common.file_io import PathManager
 
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
+from .cityscapes_foggy import load_cityscapes_instances
+from .acdc import load_acdc_instances
+from .cadc import load_cadc_instances
 from detectron2.data.datasets.cityscapes import load_cityscapes_instances, load_cityscapes_semantic
-from .cityscapes_foggy import load_cityscapes_foggy_instances
 from .multiweather import load_multiweather_instances
 import io
 import logging
@@ -46,7 +48,7 @@ def register_coco_unlabel_instances(name, metadata, json_file, image_root):
 
     This is an example of how to register a new dataset.
     You can do something similar to this function, to register new datasets.
-
+_get_builtin_metadata
     Args:
         name (str): the name that identifies a dataset, e.g. "coco_2014_train".
         metadata (dict): extra metadata associated with this dataset.  You can
@@ -109,6 +111,53 @@ def load_coco_unlabel_json(
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_coco_unlabel(_root)
 
+def register_all_acdc(root):
+    SPLITS = [
+        ("acdc_fog_train", "fog/train"),
+        ("acdc_fog_val", "fog/val"),
+        ("acdc_night_train", "night/train"),
+        ("acdc_night_val", "night/val"),
+        ("acdc_rain_train", "rain/train"),
+        ("acdc_rain_val", "rain/val"),
+        ("acdc_snow_train", "snow/train"),
+        ("acdc_snow_val", "snow/val"),
+    ]
+
+    meta = _get_builtin_metadata("cityscapes")
+    for name, split_dir in SPLITS:
+        root_dir = os.path.join(root, "acdc")
+        DatasetCatalog.register(
+            name,
+            lambda x=root_dir, y=split_dir: load_acdc_instances(
+                x, y, from_json=True, to_polygons=False
+            )
+        )
+        MetadataCatalog.get(name).set(
+                evaluator_type="coco", **meta
+            )
+    
+def register_all_cadc(root):
+    SPLITS = [
+        ("cadc_rain_train", "2018_03_07"),
+        ("cadc_rain_val", "2018_03_07"),
+        ("cadc_clear_train", "2018_03_06"),
+        ("cadc_clear_val", "2018_03_06"),
+        ("cadc_snow_train", "2018_02_27"),
+        ("cadc_snow_val", "2018_02_27"),
+    ]
+
+    meta = _get_builtin_metadata("cityscapes")
+
+    for name, split_dir in SPLITS:
+        root_dir = os.path.join(root, "cadcd")
+        DatasetCatalog.register(
+            name,
+            lambda x=root_dir, y=split_dir, z=name: load_cadc_instances(x, y, z)
+        )
+
+        MetadataCatalog.get(name).set(
+                evaluator_type="coco", **meta
+            )
 
 # ==== Predefined splits for raw cityscapes images ===========
 _RAW_CITYSCAPES_SPLITS = {
@@ -178,6 +227,8 @@ def register_all_multiweather(root):
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
         )
 
+register_all_cadc(_root)
+register_all_acdc(_root)
 register_all_cityscapes(_root)
 register_all_cityscapes_foggy(_root)
 register_all_multiweather(_root)
