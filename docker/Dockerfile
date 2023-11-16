@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.3.1-runtime-ubuntu20.04
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 LABEL org.opencontainers.image.authors="john.lee@robotics.utias.utoronto.ca"
 
 ENV TZ Canada/Eastern
@@ -24,11 +24,10 @@ RUN pip3 install -r requirements.txt && \
     rm requirements.txt
 
 #? Install PyTorch
-RUN pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 \
-    --extra-index-url https://download.pytorch.org/whl/cu113
+RUN pip3 install torch torchvision
 
 #? Install detectron2
-RUN pip3 install detectron2 -f \
-    https://dl.fbaipublicfiles.com/detectron2/wheels/cu113/torch1.10/index.html
+RUN pip3 install 'git+https://github.com/facebookresearch/detectron2.git@v0.5'
+RUN echo "export DETECTRON2_DATASETS=/home/data" >> ~/.bashrc
 
 WORKDIR /home

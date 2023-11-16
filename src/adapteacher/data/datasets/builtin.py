@@ -3,14 +3,14 @@ import os
 import contextlib
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from fvcore.common.timer import Timer
-# from fvcore.common.file_io import PathManager
 from iopath.common.file_io import PathManager
 
-from detectron2.data.datasets.pascal_voc import register_pascal_voc
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
 from .cityscapes_foggy import load_cityscapes_instances
 from .acdc import load_acdc_instances
 from .cadc import load_cadc_instances
+from detectron2.data.datasets.cityscapes import load_cityscapes_instances, load_cityscapes_semantic
+from .multiweather import load_multiweather_instances
 import io
 import logging
 
@@ -159,76 +159,76 @@ def register_all_cadc(root):
                 evaluator_type="coco", **meta
             )
 
-# ==== Predefined splits for raw cityscapes foggy images ===========
+# ==== Predefined splits for raw cityscapes images ===========
 _RAW_CITYSCAPES_SPLITS = {
+    "cityscapes_fine_instance_seg_train_coco": ("cityscapes/leftImg8bit/train/", "cityscapes/gtFine/train/"),
+    "cityscapes_fine_instance_seg_val_coco": ("cityscapes/leftImg8bit/val/", "cityscapes/gtFine/val/"),
+    "cityscapes_fine_instance_seg_test_coco": ("cityscapes/leftImg8bit/test/", "cityscapes/gtFine/test/"),
+}
+
+# ==== Predefined splits for raw cityscapes foggy images ===========
+_RAW_CITYSCAPES_FOGGY_SPLITS = {
     "cityscapes_foggy_train": ("cityscapes_foggy/leftImg8bit/train/", "cityscapes_foggy/gtFine/train/"),
     "cityscapes_foggy_val": ("cityscapes_foggy/leftImg8bit/val/", "cityscapes_foggy/gtFine/val/"),
     "cityscapes_foggy_test": ("cityscapes_foggy/leftImg8bit/test/", "cityscapes_foggy/gtFine/test/"),
 }
 
-def register_all_cityscapes_foggy(root):
-    # root = "manifold://mobile_vision_dataset/tree/yujheli/dataset"
+# ==== Predefined splits for raw Multi-Weather images ===========
+_RAW_MULTIWEATHER_SPLITS = {
+    "multiweather_train": ("cityscapes_multiweather/leftImg8bit/train/", "cityscapes_multiweather/gtFine/train/"),
+}
+
+def register_all_cityscapes(root):
     for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_SPLITS.items():
         meta = _get_builtin_metadata("cityscapes")
         image_dir = os.path.join(root, image_dir)
         gt_dir = os.path.join(root, gt_dir)
 
-        # inst_key = key.format(task="instance_seg")
         inst_key = key
-        # DatasetCatalog.register(
-        #     inst_key,
-        #     lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
-        #         x, y, from_json=True, to_polygons=True
-        #     ),
-        # )
         DatasetCatalog.register(
             inst_key,
             lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
                 x, y, from_json=False, to_polygons=False
             ),
         )
-        # MetadataCatalog.get(inst_key).set(
-        #     image_dir=image_dir, gt_dir=gt_dir, evaluator_type="cityscapes_instance", **meta
-        # )
-        # MetadataCatalog.get(inst_key).set(
-        #     image_dir=image_dir, gt_dir=gt_dir, evaluator_type="pascal_voc", **meta
-        # )
         MetadataCatalog.get(inst_key).set(
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
         )
 
-# ==== Predefined splits for Clipart (PASCAL VOC format) ===========
-def register_all_clipart(root):
-    # root = "manifold://mobile_vision_dataset/tree/yujheli/dataset"
-    SPLITS = [
-        ("Clipart1k_train", "clipart", "train"),
-        ("Clipart1k_test", "clipart", "test"),
-    ]
-    for name, dirname, split in SPLITS:
-        year = 2012
-        register_pascal_voc(name, os.path.join(root, dirname), split, year)
-        MetadataCatalog.get(name).evaluator_type = "pascal_voc"
-        # MetadataCatalog.get(name).evaluator_type = "coco"
-
-# ==== Predefined splits for Watercolor (PASCAL VOC format) ===========
-def register_all_water(root):
-    # root = "manifold://mobile_vision_dataset/tree/yujheli/dataset"
-    SPLITS = [
-        ("Watercolor_train", "watercolor", "train"),
-        ("Watercolor_test", "watercolor", "test"),
-    ]
-    for name, dirname, split in SPLITS:
-        year = 2012
-        # register_pascal_voc(name, os.path.join(root, dirname), split, year, class_names=["person", "dog","bicycle", "bird", "car", "cat"])
-        register_pascal_voc(name, os.path.join(root, dirname), split, year)
-        MetadataCatalog.get(name).evaluator_type = "pascal_voc_water"
-        # MetadataCatalog.get(name).thing_classes = ["person", "dog","bike", "bird", "car", "cat"]
-        # MetadataCatalog.get(name).thing_classes = ["person", "dog","bicycle", "bird", "car", "cat"]
-        # MetadataCatalog.get(name).evaluator_type = "coco"
+def register_all_cityscapes_foggy(root):
+    for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_FOGGY_SPLITS.items():
+        meta = _get_builtin_metadata("cityscapes")
+        image_dir = os.path.join(root, image_dir)
+        gt_dir = os.path.join(root, gt_dir)
+        inst_key = key
+        DatasetCatalog.register(
+            inst_key,
+            lambda x=image_dir, y=gt_dir: load_cityscapes_foggy_instances(
+                x, y, from_json=False, to_polygons=False
+            ),
+        )
+        MetadataCatalog.get(inst_key).set(
+            image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
+        )
+        
+def register_all_multiweather(root):
+    for key, (image_dir, gt_dir) in _RAW_MULTIWEATHER_SPLITS.items():
+        meta = _get_builtin_metadata("cityscapes")
+        image_dir = os.path.join(root, image_dir)
+        gt_dir = os.path.join(root, gt_dir)
+        inst_key = key
+        DatasetCatalog.register(
+            inst_key,
+            lambda x=image_dir, y=gt_dir: load_multiweather_instances(
+                x, y, to_polygons=False
+            ),
+        )
+        MetadataCatalog.get(inst_key).set(
+            image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
+        )
 
 register_all_cadc(_root)
 register_all_acdc(_root)
+register_all_cityscapes(_root)
 register_all_cityscapes_foggy(_root)
-register_all_clipart(_root)
-register_all_water(_root)
-
+register_all_multiweather(_root)

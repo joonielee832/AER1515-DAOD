@@ -56,7 +56,7 @@ def _get_cityscapes_files(image_dir, gt_dir):
     return files
 
 
-def load_cityscapes_instances(image_dir, gt_dir, from_json=True, to_polygons=True):
+def load_cityscapes_foggy_instances(image_dir, gt_dir, from_json=True, to_polygons=True):
     """
     Args:
         image_dir (str): path to the raw dataset. e.g., "~/cityscapes/leftImg8bit/train".
