@@ -6,7 +6,7 @@ from fvcore.common.timer import Timer
 from iopath.common.file_io import PathManager
 
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
-from .cityscapes_foggy import load_cityscapes_instances
+from .cityscapes_foggy import load_cityscapes_foggy_instances
 from .acdc import load_acdc_instances
 from .cadc import load_cadc_instances
 from detectron2.data.datasets.cityscapes import load_cityscapes_instances, load_cityscapes_semantic

@@ -37,7 +37,7 @@ DATASETS:
   CROSS_DATASET: True
   TRAIN_LABEL: ("cityscapes_fine_instance_seg_train", "cityscapes_foggy_train")
   TRAIN_UNLABEL: ("acdc_fog_train","acdc_snow_train","acdc_rain_train")
-  TEST: ("acdc_fog_val", "acdc_snow_val", "acdc_rain_val")
+  TEST: ("cityscapes_fine_instance_seg_val", "cityscapes_foggy_val", "acdc_fog_val", "acdc_snow_val", "acdc_rain_val")
 SEMISUPNET:
   Trainer: "ateacher"
   BBOX_THRESHOLD: 0.8
