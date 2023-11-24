@@ -18,6 +18,8 @@ import adapteacher.data.datasets.builtin
 
 from adapteacher.modeling.meta_arch.ts_ensemble import EnsembleTSModel
 
+from visualize import visualize
+
 
 def setup(args):
     """
@@ -33,6 +35,9 @@ def setup(args):
 
 
 def main(args):
+
+    # VISUALIZE FLAG:
+    show_vis = False
     cfg = setup(args)
     if cfg.SEMISUPNET.Trainer == "ateacher":
         Trainer = ATeacherTrainer
@@ -42,6 +47,23 @@ def main(args):
         raise ValueError("Trainer Name is not found.")
 
     if args.eval_only:
+        if show_vis:
+            if cfg.SEMISUPNET.Trainer == "ateacher":
+            
+                model = Trainer.build_model(cfg)
+                model_teacher = Trainer.build_model(cfg)
+                ensem_ts_model = EnsembleTSModel(model_teacher, model)
+
+                DetectionCheckpointer(
+                    ensem_ts_model, save_dir=cfg.OUTPUT_DIR
+                ).resume_or_load(cfg.MODEL.WEIGHTS, resume=args.resume)
+                visualize(cfg, ensem_ts_model.modelTeacher)
+
+
+                print("visualize only!")
+            res = 0
+            return res
+            
         if cfg.SEMISUPNET.Trainer == "ateacher":
             model = Trainer.build_model(cfg)
             model_teacher = Trainer.build_model(cfg)
