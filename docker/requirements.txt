@@ -3,4 +3,5 @@ cityscapesScripts
 shapely
 tensorflow[and-cuda]
 faiss-gpu
-tsnecuda==3.0.1+cu122 -f https://tsnecuda.isx.ai/tsnecuda_stable.html
+-f https://tsnecuda.isx.ai/tsnecuda_stable.html
+tsnecuda==3.0.1+cu122
