@@ -175,9 +175,9 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
                     if xmin == xmax or ymin == ymax:
                         continue
                     
-                    img = cv2.imread(image_file)
+                    #img = cv2.imread(image_file)
                     
-                    cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
+                    #cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
                     #     # font 
                     # font = cv2.FONT_HERSHEY_SIMPLEX 
                       
@@ -197,9 +197,9 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
                     # img = cv2.putText(img, string, org, font,  
                     #           fontScale, color, thickness, cv2.LINE_AA) 
                     
-                    cv2.imshow(image_file,img)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
+                    #cv2.imshow(image_file,img)
+                    #cv2.waitKey(0)
+                    #cv2.destroyAllWindows()
                     
                     anno["bbox"] = (xmin, ymin, xmax, ymax)
                     anno["bbox_mode"] = BoxMode.XYXY_ABS
