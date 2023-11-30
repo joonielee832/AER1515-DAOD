@@ -41,11 +41,12 @@ def _get_acdc_files(root_dir, split_dir):
         folder_gt_dir = os.path.join(split_gt_dir, folder)
         folder_panoptic_dir = os.path.join(split_panoptic_dir, folder)
         for basename in PathManager.ls(folder_img_dir):
+            if not "cropped" in basename:
+                continue
             
-
             image_file = os.path.join(folder_img_dir, basename)
 
-            suffix = 'rgb_anon.png'
+            suffix = 'rgb_anon_cropped.png'
             basename = basename.split(suffix)[0]
 
             label_file = os.path.join(folder_gt_dir, basename + "gt_labelIds.png")
@@ -58,7 +59,7 @@ def _get_acdc_files(root_dir, split_dir):
     return files
 
 
-def load_acdc_instances(root_dir, split_dir, from_json=True, to_polygons=True):
+def load_acdc_cropped_instances(root_dir, split_dir, from_json=True, to_polygons=True):
     """
     Args:
         image_dir (str): path to the raw dataset. e.g., "~/acdc/leftImg8bit/train".
@@ -133,8 +134,10 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
             "width": image.shape[1],
         }
 
+        logger.info(image_file)
+
         for file in jsonobj["annotations"]:
-            if file["image_id"] == basename.split("_rgb_anon.png",1)[0]:
+            if file["image_id"] == basename.split("_rgb_anon_cropped.png",1)[0]:
              
                 for obj in file["segments_info"]:
 
@@ -151,16 +154,30 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
                         continue
 
                     bbox = obj["bbox"]
-                    xmin = bbox[0]
-                    ymin = bbox[1]
-                    #width = bbox[2]
-                    #height = bbox[3]
+                    # cropped images are sized in half, giving us 540x960
+                    # we remove 28 from the bottom and 210 off each side to give us 512x512
+                    # resulting in the transformation needed for the bbox:
+                    xmin = int(bbox[0]/2) - 224
+                    ymin = int(bbox[1]/2)
+                    width = int(bbox[2]/2)
+                    height = int(bbox[3]/2)
 
-                    #xmax = xmin + width
-                    #ymax = ymin + height
+                    xmax = xmin + width
+                    ymax = ymin + height
 
-                    #img = cv2.imread(image_file)
-                    #cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
+                    # check to make sure that new labels are not out of range and crop:
+                    xmin = min(max(0, xmin), 512)
+                    ymin = min(max(0, ymin), 512)
+                    xmax = min(max(0, xmax), 512)
+                    ymax = min(max(0, ymax), 512)
+
+                    # detection is no longer in the image at all:
+                    if xmin == xmax or ymin == ymax:
+                        continue
+                    
+                    img = cv2.imread(image_file)
+                    
+                    cv2.rectangle(img,(xmin,ymin),(xmin + width, ymin + height),(0,255,0),2)
                     #     # font 
                     # font = cv2.FONT_HERSHEY_SIMPLEX 
                       
@@ -180,12 +197,12 @@ def _acdc_files_to_dict(files, from_json, to_polygons):
                     # img = cv2.putText(img, string, org, font,  
                     #           fontScale, color, thickness, cv2.LINE_AA) 
                     
-                    #cv2.imshow('image',img)
-                    #cv2.waitKey(0)
-                    #cv2.destroyAllWindows()
+                    cv2.imshow(image_file,img)
+                    cv2.waitKey(0)
+                    cv2.destroyAllWindows()
                     
-                    anno["bbox"] = obj["bbox"]
-                    anno["bbox_mode"] = BoxMode.XYWH_ABS
+                    anno["bbox"] = (xmin, ymin, xmax, ymax)
+                    anno["bbox_mode"] = BoxMode.XYXY_ABS
 
                     annos.append(anno)
 
