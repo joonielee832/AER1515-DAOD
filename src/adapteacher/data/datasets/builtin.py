@@ -8,6 +8,7 @@ from iopath.common.file_io import PathManager
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
 from .cityscapes_foggy import load_cityscapes_foggy_instances
 from .acdc import load_acdc_instances
+from .acdc_cropped import load_acdc_cropped_instances
 from .cadc import load_cadc_instances
 from detectron2.data.datasets.cityscapes import load_cityscapes_instances, load_cityscapes_semantic
 from .multiweather import load_multiweather_instances
@@ -136,6 +137,33 @@ def register_all_acdc(root):
                 evaluator_type="coco", **meta
             )
     
+def register_all_acdc_cropped(root):
+    SPLITS = [
+        ("acdc_cropped_fog_train", "fog/train"),
+        ("acdc_cropped_fog_val", "fog/val"),
+        ("acdc_cropped_night_train", "night/train"),
+        ("acdc_cropped_night_val", "night/val"),
+        ("acdc_cropped_rain_train", "rain/train"),
+        ("acdc_cropped_rain_val", "rain/val"),
+        ("acdc_cropped_snow_train", "snow/train"),
+        ("acdc_cropped_snow_val", "snow/val"),
+    ]
+
+    print("LOADING CROPPED")
+
+    meta = _get_builtin_metadata("cityscapes")
+    for name, split_dir in SPLITS:
+        root_dir = os.path.join(root, "acdc_cropped")
+        DatasetCatalog.register(
+            name,
+            lambda x=root_dir, y=split_dir: load_acdc_cropped_instances(
+                x, y, from_json=True, to_polygons=False
+            )
+        )
+        MetadataCatalog.get(name).set(
+                evaluator_type="coco", **meta
+            )
+  
 def register_all_cadc(root):
     SPLITS = [
         ("cadc_rain_train", "2018_03_07"),
@@ -229,6 +257,7 @@ def register_all_multiweather(root):
 
 register_all_cadc(_root)
 register_all_acdc(_root)
+register_all_acdc_cropped(_root)
 register_all_cityscapes(_root)
 register_all_cityscapes_foggy(_root)
 register_all_multiweather(_root)
