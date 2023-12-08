@@ -204,6 +204,7 @@ _RAW_CITYSCAPES_FOGGY_SPLITS = {
 # ==== Predefined splits for raw Multi-Weather images ===========
 _RAW_MULTIWEATHER_SPLITS = {
     "multiweather_train": ("cityscapes_multiweather/leftImg8bit/train/", "cityscapes_multiweather/gtFine/train/"),
+    "multiweather_normal_train": ("cityscapes_multiweather/leftImg8bit/train/", "cityscapes_multiweather/gtFine/train/"),
 }
 
 def register_all_cityscapes(root):
@@ -248,14 +249,14 @@ def register_all_multiweather(root):
         DatasetCatalog.register(
             inst_key,
             lambda x=image_dir, y=gt_dir: load_multiweather_instances(
-                x, y, to_polygons=False
+                x, y, to_polygons=False, overcast_only=("normal" in key)
             ),
         )
         MetadataCatalog.get(inst_key).set(
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="coco", **meta
         )
 
-register_all_cadc(_root)
+# register_all_cadc(_root)
 register_all_acdc(_root)
 register_all_acdc_cropped(_root)
 register_all_cityscapes(_root)

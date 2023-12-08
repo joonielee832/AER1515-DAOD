@@ -23,7 +23,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-def _get_multiweather_files(image_dir, gt_dir):
+def _get_multiweather_files(image_dir, gt_dir, overcast_only=False):
     files = []
     # scan through the directory
     cities = PathManager.ls(image_dir)
@@ -32,8 +32,9 @@ def _get_multiweather_files(image_dir, gt_dir):
         city_img_dir = os.path.join(image_dir, city)
         city_gt_dir = os.path.join(gt_dir, city)
         for basename in PathManager.ls(city_img_dir):
+            if overcast_only and "overcast" not in basename:
+                continue
             image_file = os.path.join(city_img_dir, basename)
-
             suffix = 'leftImg8bit'
             basename = basename.split(suffix)[0]
 
@@ -47,20 +48,20 @@ def _get_multiweather_files(image_dir, gt_dir):
     return files
 
 
-def load_multiweather_instances(image_dir, gt_dir, to_polygons=True):
+def load_multiweather_instances(image_dir, gt_dir, to_polygons=True, overcast_only=False):
     """
     Args:
         image_dir (str): path to the raw dataset. e.g., "~/cityscapes/leftImg8bit/train".
         gt_dir (str): path to the raw annotations. e.g., "~/cityscapes/gtFine/train".
         to_polygons (bool): whether to represent the segmentation as polygons
             (COCO's format) instead of masks (cityscapes's format).
+        overcast_only (bool): whether to only use images with overcast (normal) weather.
 
     Returns:
         list[dict]: a list of dicts in Detectron2 standard format. (See
         `Using Custom Datasets </tutorials/datasets.html>`_ )
     """
-    files = _get_multiweather_files(image_dir, gt_dir)
-
+    files = _get_multiweather_files(image_dir, gt_dir, overcast_only=overcast_only)
     logger.info("Preprocessing multiweather annotations ...")
     # This is still not fast: all workers will execute duplicate works and will
     # take up to 10m on a 8GPU server.
