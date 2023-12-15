@@ -3,12 +3,17 @@ import cv2 as cv
 import random
 import torch
 from torch import nn
+import matplotlib.pyplot as plt
 import matplotlib.colors as mplc
 
 # import some common detectron2 utilities
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data.catalog import DatasetCatalog
 from detectron2.structures import BoxMode
+from detectron2.layers import nms
+
+from detectron2.structures.boxes import Boxes
+from detectron2.structures.instances import Instances
 
 from contextlib import ExitStack, contextmanager
 
@@ -30,7 +35,6 @@ def visualize(cfg, model):
           stack.enter_context(torch.no_grad())
           count = 0
           for _, inputs in enumerate(data_loader):
-              count += 1
               if count == 4:
                 break
               img = cv.imread(inputs[0]["file_name"])
@@ -38,7 +42,16 @@ def visualize(cfg, model):
               # get output:
               output = model(inputs)
               predictions = output[0]["instances"].to("cpu")
+              print(predictions)
+              # threshold on predictions:
+              #predictions = threshold_predictions(predictions)
 
+              print(predictions)
+
+              if len(predictions.pred_boxes) == 0:
+                  # no detections
+                  continue
+              count += 1
               # find gt in dataset dict:
               gt_dict = next((item for item in dataset_dicts if item["file_name"] == inputs[0]["file_name"]), None)
               if gt_dict != None:
@@ -96,6 +109,8 @@ def visualize(cfg, model):
                           prepend="GT_"
                       )
 
+                      num_instances = len(boxes)
+
                       # only use b/r/g for predictions
                       colors = [(random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 0)) for _ in range(num_instances)]
                       vis = visualizer.overlay_instances(
@@ -105,14 +120,99 @@ def visualize(cfg, model):
                           keypoints=keypts, 
                           assigned_colors=colors
                       )
-                  
-                      cv.imshow(dataset_name, vis.get_image())
-                      cv.waitKey(0) 
+                      plt.imshow(vis.get_image())
+                      plt.show()
+                      #cv.imshow(dataset_name, vis.get_image())
+                      #cv.waitKey(0) 
               
                       # closing all open windows 
-                      cv.destroyAllWindows() 
+                      #cv.destroyAllWindows() 
               
+def threshold_predictions(predictions, thres=0.5):
+    image_shape = predictions.image_size
+    new_predictions = Instances(image_shape)
 
+    #theshold based on confidence
+    valid_map = predictions.scores > thres
+    new_bbox_loc = predictions.pred_boxes.tensor[valid_map, :]
+
+    # nms_bboxes, nms_classes, nms_scores, nms_masks = nms_predictions(
+    #     predictions.pred_classes[valid_map],
+    #     predictions.scores[valid_map],
+    #     new_bbox_loc,
+    #     None,
+    #     image_shape)
+    new_predictions.pred_boxes = Boxes(new_bbox_loc)
+    new_predictions.pred_classes = predictions.pred_classes[valid_map]
+    new_predictions.scores = predictions.scores[valid_map]
+
+    # # threshiold based on nms:
+    # new_predictions.pred_boxes = Boxes(nms_bboxes)
+    # new_predictions.pred_classes = nms_classes
+    # new_predictions.scores = nms_scores
+    if predictions.has("pred_keypoints") and predictions.pred_keypoints != None:
+        new_predictions.keypoint = predictions.pred_keypoints[valid_map] 
+
+    return new_predictions
+
+
+def nms_predictions(classes, scores, bboxes, masks, image_shape, iou_th=.5):
+    he, wd = image_shape[0], image_shape[1]
+    boxes_list = [[x[0] / wd, x[1] / he, x[2] / wd, x[3] / he]
+                  for x in bboxes]
+    scores_list = [x for x in scores]
+    labels_list = [x for x in classes]
+    nms_bboxes, nms_scores, nms_classes = nms(
+        boxes=[boxes_list], 
+        scores=[scores_list], 
+        labels=[labels_list], 
+        weights=None,
+        iou_thr=iou_th
+    )
+    nms_masks = []
+    for s in nms_scores:
+        nms_masks.append(masks[scores.index(s)])
+    nms_scores, nms_classes, nms_masks = zip(
+        *sorted(
+            zip(nms_scores, nms_classes, nms_masks), 
+            reverse=True))
+    return nms_classes, nms_scores, nms_masks
+
+
+# def threshold_bbox(self, proposal_bbox_inst, thres=0.7, proposal_type="roih"):
+#     if proposal_type == "rpn":
+#         valid_map = proposal_bbox_inst.objectness_logits > thres
+
+#         # create instances containing boxes and gt_classes
+#         image_shape = proposal_bbox_inst.image_size
+#         new_proposal_inst = Instances(image_shape)
+
+#         # create box
+#         new_bbox_loc = proposal_bbox_inst.proposal_boxes.tensor[valid_map, :]
+#         new_boxes = Boxes(new_bbox_loc)
+
+#         # add boxes to instances
+#         new_proposal_inst.gt_boxes = new_boxes
+#         new_proposal_inst.objectness_logits = proposal_bbox_inst.objectness_logits[
+#             valid_map
+#         ]
+#     elif proposal_type == "roih":
+#         valid_map = proposal_bbox_inst.scores > thres
+
+#         # create instances containing boxes and gt_classes
+#         image_shape = proposal_bbox_inst.image_size
+#         new_proposal_inst = Instances(image_shape)
+
+#         # create box
+#         new_bbox_loc = proposal_bbox_inst.pred_boxes.tensor[valid_map, :]
+#         new_boxes = Boxes(new_bbox_loc)
+
+#         # add boxes to instances
+#         new_proposal_inst.gt_boxes = new_boxes
+#         new_proposal_inst.gt_classes = proposal_bbox_inst.pred_classes[valid_map]
+#         new_proposal_inst.scores = proposal_bbox_inst.scores[valid_map]
+
+#     return new_proposal_inst
 
 
 @contextmanager
